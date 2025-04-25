@@ -1,42 +1,28 @@
 
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Statut des Services</title>
-  <style>
-    body { font-family: Arial; }
-    .ok { color: green; }
-    .down { color: red; }
-  </style>
+  <title>Exemple API</title>
 </head>
 <body>
-  <h1>État des services</h1>
-  <ul id="status-list"></ul>
+  <h1>Données API :</h1>
+  <pre id="resultat"></pre>
 
   <script>
+    // Remplace ceci par l'URL de ton API
+    const urlAPI = 'curl https://slack-status.com/api/v2.0.0/current';
 
-const PORT = 8000;
-
-    fetch('status.json')
+    fetch(urlAPI)
       .then(response => response.json())
       .then(data => {
-        const list = document.getElementById('status-list');
-        data.forEach(service => {
-          const li = document.createElement('li');
-          li.innerHTML = `<strong>${service.name}</strong> : 
-                          <span class="${service.status.toLowerCase()}">${service.status}</span> 
-                          <em>(vérifié à ${service.last_checked})</em>`;
-          list.appendChild(li);
-        });
+        // Affiche les données dans la balise <pre>
+        document.getElementById('resultat').textContent = JSON.stringify(data, null, 2);
+      })
+      .catch(error => {
+        console.error('Erreur :', error);
+        document.getElementById('resultat').textContent = 'Erreur lors de la récupération des données.';
       });
-
-
-      // Lancer le serveur
-app.listen(PORT, () => {
-    console.log(`Serveur en ligne : http://localhost:${PORT}`);
-    fetchSlackStatus(); // Charger les données au démarrage
-});
   </script>
 </body>
 </html>
