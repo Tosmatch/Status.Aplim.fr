@@ -1,25 +1,24 @@
-const express = require("express");
-const PORT = 3000;
-const app = express();
-
-async function slackstatut() {
-try {
-    const reponse = await fetch("https://slack-status.com/api/v2.0.0/current");
-    const rep = await reponse.json();
-    rep.date_updated = new Date().toISOString();
-    console.log("récupération du statut de slacks...", rep);
-    
-   
-    
-
+// Fonction pour récupérer et afficher le statut de Slack
+function getSlackStatus() {
+    fetch('https://slack-status.com/api/v2.0.0/current')
+        .then(response => response.json())
+        .then(data => {
+            const statusElement = document.getElementById('status');
+            if (data.status && data.status.description) {
+                statusElement.textContent = `Status: ${data.status.description}`;
+            } else {
+                statusElement.textContent = "Impossible de récupérer le statut.";
+            }
+        })
+        .catch(error => {
+            const statusElement = document.getElementById('status');
+            statusElement.textContent = "Erreur lors de la récupération des données.";
+            console.error(error);
+        });
 }
-    catch (erreur) {
-        console.error("Erreur du chargement", erreur);
-    }
-setTimeout(slackstatut,30000);
-}
-slackstatut();
-app.listen(PORT, () => {
-    console.log('server en ligne sur http:localhost:${PORT}');
-});
-app.use(express.static(__dirname + '/pub'));
+
+// Appeler la fonction une première fois pour afficher le statut immédiatement
+getSlackStatus();
+
+// Rafraîchir le statut toutes les minutes (60 000 ms)
+setInterval(getSlackStatus, 60000);
