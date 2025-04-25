@@ -10,7 +10,7 @@
   <pre id="resultat">Chargement...</pre>
 
   <script>
-    fetch('https://slack-status.com/api/v2.0.0/current')
+    fetch('https://cors-anywhere.herokuapp.com/https://slack-status.com/api/v2.0.0/current')
       .then(response => response.json())
       .then(data => {
         // Affiche le JSON brut
