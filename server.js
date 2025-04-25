@@ -1,6 +1,9 @@
-// Fonction pour récupérer et afficher le statut de Slack
+// Fonction pour récupérer et afficher le statut de Slack avec un proxy CORS
 function getSlackStatus() {
-    fetch('https://slack-status.com/api/v2.0.0/current')
+    const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+    const apiUrl = 'https://slack-status.com/api/v2.0.0/current';
+
+    fetch(proxyUrl + apiUrl)
         .then(response => response.json())
         .then(data => {
             const statusElement = document.getElementById('status');
