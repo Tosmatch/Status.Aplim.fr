@@ -3,25 +3,27 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Exemple API</title>
+  <title>Statut Slack</title>
 </head>
 <body>
-  <h1>Données API :</h1>
-  <pre id="resultat"></pre>
+  <h1>Statut actuel de Slack</h1>
+  <pre id="resultat">Chargement...</pre>
 
   <script>
-    
-    const urlAPI = 'curl https://slack-status.com/api/v2.0.0/current';
-
-    fetch(urlAPI)
+    fetch('https://slack-status.com/api/v2.0.0/current')
       .then(response => response.json())
       .then(data => {
-        // Affiche les données dans la balise <pre>
+        // Affiche le JSON brut
         document.getElementById('resultat').textContent = JSON.stringify(data, null, 2);
+
+        // Optionnel : afficher un message clair
+        const status = data.status;
+        const message = `Slack est actuellement : ${status}`;
+        console.log(message); // Pour debug
       })
       .catch(error => {
         console.error('Erreur :', error);
-        document.getElementById('resultat').textContent = 'Erreur lors de la récupération des données.';
+        document.getElementById('resultat').textContent = 'Erreur lors de la récupération du statut Slack.';
       });
   </script>
 </body>
