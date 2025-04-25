@@ -34,11 +34,8 @@
 </div>
 
 <script>
-    // Utilisation du proxy CORS
-    const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-    const slackApiUrl = 'https://status.slack.com/api/v2.0.0/current';
-
-    fetch(proxyUrl + slackApiUrl)
+    // Interroger le serveur local pour obtenir l'état de Slack
+    fetch('http://localhost:3000/slack-status')
         .then(response => response.json())
         .then(data => {
             const status = data.status.indicator;
@@ -59,10 +56,11 @@
             }
         })
         .catch(error => {
-            // Si erreur, afficher un message
+            // Si une erreur se produit, afficher un message
             document.getElementById("statusMessage").innerText = "Erreur de connexion au statut Slack.";
         });
 </script>
 
 </body>
 </html>
+
