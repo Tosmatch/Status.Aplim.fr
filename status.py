@@ -2,7 +2,7 @@
 import json, datetime, requests
 
 services = [
-    {"name" : "Slack", "url" : "https://status.slack.com/api/v2/status.json"},
+    {"name" : "Slack", "url" : "https://slack-status.com/"},
      ]
 status_list = []
 
