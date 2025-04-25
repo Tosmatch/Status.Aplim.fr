@@ -1,27 +1,22 @@
-// Fonction pour récupérer et afficher le statut de Slack avec un proxy CORS
-function getSlackStatus() {
-    const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-    const apiUrl = 'https://slack-status.com/api/v2.0.0/current';
+const statusElement = document.getElementById('status');
 
-    fetch(proxyUrl + apiUrl)
-        .then(response => response.json())
-        .then(data => {
-            const statusElement = document.getElementById('status');
-            if (data.status && data.status.description) {
-                statusElement.textContent = `Status: ${data.status.description}`;
-            } else {
-                statusElement.textContent = "Impossible de récupérer le statut.";
-            }
-        })
-        .catch(error => {
-            const statusElement = document.getElementById('status');
-            statusElement.textContent = "Erreur lors de la récupération des données.";
-            console.error(error);
-        });
-}
+// Utilisation d'un proxy uniquement si nécessaire
+const proxy = 'https://cors-anywhere.herokuapp.com/';
+const slackStatusAPI = 'https://status.slack.com/api/v2/summary.json';
 
-// Appeler la fonction une première fois pour afficher le statut immédiatement
-getSlackStatus();
+fetch(proxy + slackStatusAPI)
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`Erreur HTTP ${response.status}`);
+    }
+    return response.json(); // Ici, PAS de JSON.parse() nécessaire
+  })
+  .then(data => {
+    const status = data.status.description;
+    statusElement.textContent = `Slack est ${status}`;
+  })
+  .catch(error => {
+    console.error('Erreur lors de la récupération du statut:', error);
+    statusElement.textContent = "Erreur lors de la récupération du statut.";
+  });
 
-// Rafraîchir le statut toutes les minutes (60 000 ms)
-setInterval(getSlackStatus, 60000);
