@@ -3,13 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Status Slack</title>
+    <title>État de Slack</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+        .status-box {
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .status-ok { background-color: #4CAF50; color: white; }
+        .status-issue { background-color: #FF9800; color: white; }
+        .status-down { background-color: #f44336; color: white; }
+    </style>
 </head>
 <body>
-    <h1>Status actuel de Slack</h1>
-    <div id="status">Chargement...</div>
 
-    <!-- Inclure le script JS -->
-    <script src="server.js"></script>
+<div class="status-box" id="statusBox">
+    <h2>État de Slack</h2>
+    <p id="statusMessage">Chargement...</p>
+</div>
+
+<script>
+    fetch('https://status.slack.com/api/v2.0.0/current')
+        .then(response => response.json())
+        .then(data => {
+            const status = data.status.indicator;
+            const description = data.status.description;
+            const statusMessage = document.getElementById("statusMessage");
+            const statusBox = document.getElementById("statusBox");
+
+            if (status === "good") {
+                statusBox.classList.add("status-ok");
+                statusMessage.innerText = `Slack fonctionne normalement: ${description}`;
+            } else if (status === "minor") {
+                statusBox.classList.add("status-issue");
+                statusMessage.innerText = `Problèmes mineurs sur Slack: ${description}`;
+            } else {
+                statusBox.classList.add("status-down");
+                statusMessage.innerText = `Slack est en panne: ${description}`;
+            }
+        })
+        .catch(error => {
+            document.getElementById("statusMessage").innerText = "Erreur de connexion au statut Slack.";
+        });
+</script>
+
 </body>
 </html>
