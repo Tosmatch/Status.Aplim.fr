@@ -60,6 +60,7 @@ async function updateSlackStatus() {
       service_status: data.status.toLowerCase().includes('ok') ? 'Disponible' : 'Problème détecté',
       date_updated: new Date().toISOString()
     };
+    console.log(`[Slack] Status récupéré : ${slackStatus.service_status} (${slackStatus.status})`);
     broadcastStatus();
   } catch (e) {
     console.error("Slack error:", e);
