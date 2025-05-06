@@ -85,7 +85,10 @@
   <div id="lastUpdated" class="last-updated">Dernière mise à jour : -</div>
 
   <script>
-    const socket = new WebSocket('ws://localhost:5000');
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const socketUrl = `${protocol}://${window.location.host}`;
+    const socket = new WebSocket(socketUrl);
+
 
     socket.onmessage = function(event) {
       const data = JSON.parse(event.data);
