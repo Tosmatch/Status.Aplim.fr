@@ -3,23 +3,128 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Statut Slack</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      color: #333;
+      padding: 20px;
+      margin: 0;
+    }
+    .item-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding: 8px 0;
+      border-bottom: 2px solid #aaa;
+    }
+    .status-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid #555;
+    }
+    .status-ok {
+      background-color: green;
+    }
+    .status-error {
+      background-color: red;
+    }
+    .status-warning {
+      background-color: yellow;
+    }
+    .ping-container {
+      margin-top: 40px;
+    }
+    .section-title {
+      font-size: 1.5em;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+    .last-updated {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      font-size: 0.9em;
+      color: #555;
+      background-color: #fff;
+      padding: 6px 12px;
+      border-radius: 5px;
+      box-shadow: 0px 0px 8px rgba(0,0,0,0.15);
+    }
+    h1 {
+      margin-bottom: 30px;
+    }
+    .item-name {
+      font-weight: bold;
+      font-size: 1.1em;
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>Suivi du Statut de Slack</h1>
-    </header>
-    <div class="status-box">
-      <h2 id="status">Chargement...</h2>
-      <p id="date-updated">Mise à jour le : En attente...</p>
-    </div>
-    <footer>
-      <p>Mis à jour automatiquement toutes les 30 secondes.</p>
-    </footer>
+
+  <h1>Statut des Services</h1>
+
+  <div class="item-row">
+    <div class="item-name">Slack</div>
+    <div id="slackStatus" class="status-circle"></div>
   </div>
 
-  <script src="script.js"></script>
+  <div class="item-row">
+    <div class="item-name">AnyDesk</div>
+    <div id="anydeskStatus" class="status-circle"></div>
+  </div>
+
+  <div class="ping-container">
+    <h2 class="section-title">Ping des Villes</h2>
+    <div id="pingStatus"></div>
+  </div>
+
+  <div id="lastUpdated" class="last-updated">Dernière mise à jour : -</div>
+
+  <script>
+    const socket = new WebSocket('ws://localhost:5000');
+
+    socket.onmessage = function(event) {
+      const data = JSON.parse(event.data);
+      const currentTime = new Date().toLocaleString();
+
+      const slackStatusElement = document.getElementById('slackStatus');
+      slackStatusElement.className = 'status-circle ' + (data.slack.service_status === 'Disponible' ? 'status-ok' : 'status-error');
+
+      const anydeskStatusElement = document.getElementById('anydeskStatus');
+      anydeskStatusElement.className = 'status-circle ' + (data.anydesk.service_status === 'Disponible' ? 'status-ok' : 'status-error');
+
+      const pingStatusElement = document.getElementById('pingStatus');
+      pingStatusElement.innerHTML = '';
+
+      Object.keys(data.ping).forEach(ip => {
+        const pingResult = data.ping[ip];
+        const city = pingResult.city;
+        const statusClass = pingResult.status === 'Disponible'
+          ? 'status-ok'
+          : (pingResult.status === 'Incident détecté' ? 'status-warning' : 'status-error');
+
+        const pingItem = document.createElement('div');
+        pingItem.className = 'item-row';
+        pingItem.innerHTML = `<div class="item-name">${city}</div><div class="status-circle ${statusClass}"></div>`;
+        pingStatusElement.appendChild(pingItem);
+      });
+
+      const lastUpdatedElement = document.getElementById('lastUpdated');
+      lastUpdatedElement.textContent = `Dernière mise à jour : ${currentTime}`;
+    };
+
+    socket.onopen = () => {
+      console.log('Connexion WebSocket établie');
+    };
+
+    socket.onclose = () => {
+      console.log('La connexion WebSocket a été fermée');
+    };
+  </script>
+
 </body>
 </html>
