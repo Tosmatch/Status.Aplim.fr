@@ -85,61 +85,45 @@
   <div id="lastUpdated" class="last-updated">Dernière mise à jour : -</div>
 
   <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-      const socketUrl = `${protocol}://${window.location.host}`;
-      const socket = new WebSocket(socketUrl);
+    const socket = new WebSocket('ws://localhost:5000');
 
-      socket.onmessage = function(event) {
-        const data = JSON.parse(event.data);
-        const currentTime = new Date().toLocaleString();
+    socket.onmessage = function(event) {
+      const data = JSON.parse(event.data);
+      const currentTime = new Date().toLocaleString();
 
-        const slackStatusElement = document.getElementById('slackStatus');
-        if (slackStatusElement) {
-          slackStatusElement.className = 'status-circle ' + (data.slack.service_status === 'Disponible' ? 'status-ok' : 'status-error');
-        }
+      const slackStatusElement = document.getElementById('slackStatus');
+      slackStatusElement.className = 'status-circle ' + (data.slack.service_status === 'Disponible' ? 'status-ok' : 'status-error');
 
-        const anydeskStatusElement = document.getElementById('anydeskStatus');
-        if (anydeskStatusElement) {
-          anydeskStatusElement.className = 'status-circle ' + (data.anydesk.service_status === 'Disponible' ? 'status-ok' : 'status-error');
-        }
+      const anydeskStatusElement = document.getElementById('anydeskStatus');
+      anydeskStatusElement.className = 'status-circle ' + (data.anydesk.service_status === 'Disponible' ? 'status-ok' : 'status-error');
 
-        const pingStatusElement = document.getElementById('pingStatus');
-        if (pingStatusElement) {
-          pingStatusElement.innerHTML = '';
+      const pingStatusElement = document.getElementById('pingStatus');
+      pingStatusElement.innerHTML = '';
 
-          Object.keys(data.ping).forEach(ip => {
-            const pingResult = data.ping[ip];
-            const city = pingResult.city;
-            const statusClass = pingResult.status === 'Disponible'
-              ? 'status-ok'
-              : (pingResult.status === 'Incident détecté' ? 'status-warning' : 'status-error');
+      Object.keys(data.ping).forEach(ip => {
+        const pingResult = data.ping[ip];
+        const city = pingResult.city;
+        const statusClass = pingResult.status === 'Disponible'
+          ? 'status-ok'
+          : (pingResult.status === 'Incident détecté' ? 'status-warning' : 'status-error');
 
-            const pingItem = document.createElement('div');
-            pingItem.className = 'item-row';
-            pingItem.innerHTML = `<div class="item-name">${city}</div><div class="status-circle ${statusClass}"></div>`;
-            pingStatusElement.appendChild(pingItem);
-          });
-        }
+        const pingItem = document.createElement('div');
+        pingItem.className = 'item-row';
+        pingItem.innerHTML = `<div class="item-name">${city}</div><div class="status-circle ${statusClass}"></div>`;
+        pingStatusElement.appendChild(pingItem);
+      });
 
-        const lastUpdatedElement = document.getElementById('lastUpdated');
-        if (lastUpdatedElement) {
-          lastUpdatedElement.textContent = `Dernière mise à jour : ${currentTime}`;
-        }
-      };
+      const lastUpdatedElement = document.getElementById('lastUpdated');
+      lastUpdatedElement.textContent = `Dernière mise à jour : ${currentTime}`;
+    };
 
-      socket.onopen = () => {
-        console.log('✅ Connexion WebSocket établie');
-      };
+    socket.onopen = () => {
+      console.log('Connexion WebSocket établie');
+    };
 
-      socket.onclose = () => {
-        console.log('❌ Connexion WebSocket fermée');
-      };
-
-      socket.onerror = (err) => {
-        console.error('Erreur WebSocket :', err);
-      };
-    });
+    socket.onclose = () => {
+      console.log('La connexion WebSocket a été fermée');
+    };
   </script>
 
 </body>
