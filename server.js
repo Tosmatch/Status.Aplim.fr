@@ -92,6 +92,8 @@ async function updateAnydeskStatus() {
     });
 
     anydeskStatus.service_status = recent.length > 0 ? 'Problème détecté' : 'Disponible';
+    console.log(`[AnyDesk] Incidents récents : ${anydeskStatus.incidents.length}`);
+console.log(`[AnyDesk] Status calculé : ${anydeskStatus.service_status}`);
     broadcastStatus();
   } catch (e) {
     console.error("AnyDesk error:", e);
