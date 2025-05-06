@@ -127,6 +127,22 @@ app.get('/api/status', (_, res) => res.json(slackStatus));
 app.get('/api/anydesk', (_, res) => res.json(anydeskStatus));
 app.get('/api/ping', (_, res) => res.json(pingStatus));
 
+const https = require('https');
+
+app.get('/ip', (req, res) => {
+  https.get('https://api.ipify.org', response => {
+    let ip = '';
+    response.on('data', chunk => ip += chunk);
+    response.on('end', () => {
+      res.send(`Adresse IP publique du serveur : ${ip}`);
+    });
+  }).on('error', (err) => {
+    console.error("Erreur IP:", err);
+    res.status(500).send("Impossible de récupérer l'adresse IP.");
+  });
+});
+
+
 // ---------------------- LANCEMENT DU SERVEUR ----------------------
 
 server.listen(PORT, () => {
