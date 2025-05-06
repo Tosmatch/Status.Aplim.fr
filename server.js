@@ -43,7 +43,7 @@ async function testPing() {
       pingStatus[ip] = {
         status: isAlive ? 'Disponible' : 'Indisponible',
         result: isAlive ? 'En ligne' : 'Hors ligne',
-        city : CityName
+        city 
       };
       console.log(`[Ping] ${city} (${ip}): ${pingStatus[ip].status}`);
       broadcastStatus();
