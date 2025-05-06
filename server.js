@@ -45,7 +45,7 @@ async function testPing() {
         result: isAlive ? 'En ligne' : 'Hors ligne',
         city : CityName
       };
-      console.log(`[Ping] ${city} (${ip}): ${pingStatus[ip].result}`);
+      console.log(`[Ping] ${city} (${ip}): ${pingStatus[ip].status}`);
       broadcastStatus();
     });
   });
