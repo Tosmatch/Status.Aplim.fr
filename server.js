@@ -38,12 +38,13 @@ ipAddresses.forEach(ip => {
 async function testPing() {
   ipAddresses.forEach(ip => {
     ping.sys.probe(ip, isAlive => {
+      const cityName = ipToCityMap[ip] || 'Inconnu'; 
       pingStatus[ip] = {
         status: isAlive ? 'Disponible' : 'Indisponible',
         result: isAlive ? 'En ligne' : 'Hors ligne',
-        city: ipToCityMap[ip] || 'Inconnu'
+        city: cityName
       };
-      console.log(`[Ping Test] ${city} (${ip}) : ${pingStatus[ip].result}`);
+      console.log(`[Ping Test] ${cityName} (${ip}) : ${pingStatus[ip].result}`);
       broadcastStatus();
     });
   });
