@@ -43,7 +43,7 @@ async function testPing() {
         result: isAlive ? 'En ligne' : 'Hors ligne',
         city: ipToCityMap[ip] || 'Inconnu'
       };
-      console.log(`[Ping Test] ${cityName} (${ip}) : ${pingStatus[ip].result}`);
+      console.log(`[Ping Test] ${city} (${ip}) : ${pingStatus[ip].result}`);
       broadcastStatus();
     });
   });
