@@ -1,7 +1,7 @@
 const express = require("express");
 const fetch = require("node-fetch");
 const { parseStringPromise } = require("xml2js");
-const WebSocket = require("ws");
+const WebSocket = require("ws://status-aplim-fr.onrender.com/");
 const ping = require("ping");
 
 const app = express();
