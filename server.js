@@ -3,54 +3,52 @@ const fetch = require("node-fetch");
 const { parseStringPromise } = require("xml2js");
 const WebSocket = require("ws");
 const ping = require("ping");
-const http = require("http"); // 👈 Ajouté
+const https = require("https");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// 👉 Sert les fichiers statiques du dossier public
+// Dossier public pour les fichiers statiques (HTML, JS, etc.)
 app.use(express.static(__dirname + '/public'));
 
-// 👉 Crée un vrai serveur HTTP
-const server = http.createServer(app);
-
-// 👉 WebSocket attaché au serveur HTTP
+// WebSocket Server
+const server = app.listen(PORT, () => {
+  console.log(`✅ Dashboard en ligne sur le port ${PORT}`);
+});
 const wss = new WebSocket.Server({ server });
 
-// ---------------------- ÉTAT DES SERVICES ----------------------
-
+// Statuts initiaux
 let slackStatus = { status: 'En attente...', service_status: '', date_updated: '' };
 let anydeskStatus = { status: 'En attente...', service_status: '', incidents: [] };
 
+// IP à surveiller
 const ipAddresses = ['80.14.43.74', '217.128.247.87', '86.214.116.135', '92.173.237.27', '72.14.201.119', '37.58.153.5', '37.58.130.51', '185.149.218.234', '212.84.57.223', '193.252.196.19'];
-
 const ipToCityMap = {
-  "80.14.43.74": "Angers", "217.128.247.87": "Nancy", '86.214.116.135': "Montpellier",
-  "92.173.237.27": "Caen", "72.14.201.119": "Lyon", "37.58.153.5": "Paris",
-  "37.58.130.51": "Anzin", "185.149.218.234": "Saint-Jeoire Koe",
+  "80.14.43.74": "Angers", "217.128.247.87": "Nancy", "86.214.116.135": "Montpellier", "92.173.237.27": "Caen",
+  "72.14.201.119": "Lyon", "37.58.153.5": "Paris", "37.58.130.51": "Anzin", "185.149.218.234": "Saint-Jeoire Koe",
   "212.84.57.223": "Saint-Jeoire Rez", "193.252.196.19": "Bruz"
 };
 
-let pingStatus = ipAddresses.reduce((acc, ip) => {
-  acc[ip] = { status: 'En attente...', result: '', city: ipToCityMap[ip] || 'Inconnu' };
-  return acc;
-}, {});
+let pingStatus = {};
+ipAddresses.forEach(ip => {
+  pingStatus[ip] = { status: 'En attente...', result: '', city: ipToCityMap[ip] || 'Inconnu' };
+});
 
+// PING
 async function testPing() {
   ipAddresses.forEach(ip => {
-    ping.sys.probe(ip, (isAlive) => {
-      const city = ipToCityMap[ip] || 'Inconnu';
+    ping.sys.probe(ip, isAlive => {
       pingStatus[ip] = {
         status: isAlive ? 'Disponible' : 'Indisponible',
         result: isAlive ? 'En ligne' : 'Hors ligne',
-        city 
+        city: ipToCityMap[ip] || 'Inconnu'
       };
-      console.log(`[Ping] ${city} (${ip}): ${pingStatus[ip].status}`);
       broadcastStatus();
     });
   });
 }
 
+// Slack
 async function updateSlackStatus() {
   try {
     const res = await fetch("https://slack-status.com/api/v2.0.0/current");
@@ -68,11 +66,13 @@ async function updateSlackStatus() {
   }
 }
 
+// AnyDesk
 async function updateAnydeskStatus() {
   try {
     const res = await fetch("https://status.anydesk.com/history.atom");
     const xml = await res.text();
     const parsed = await parseStringPromise(xml);
+
     const entries = parsed.feed.entry || [];
     const motsCles = ['europe', 'customer portal', 'anydesk account'];
 
@@ -97,6 +97,7 @@ async function updateAnydeskStatus() {
   }
 }
 
+// Diffuse à tous les clients connectés
 function broadcastStatus() {
   const statusData = {
     slack: slackStatus,
@@ -110,41 +111,29 @@ function broadcastStatus() {
   });
 }
 
-// ---------------------- TÂCHES PÉRIODIQUES ----------------------
-
-updateSlackStatus();
-setInterval(updateSlackStatus, 10000);
-
-updateAnydeskStatus();
-setInterval(updateAnydeskStatus, 10000);
-
-testPing();
-setInterval(testPing, 60000);
-
-// ---------------------- ROUTES API ----------------------
-
+// Routes API
 app.get('/api/status', (_, res) => res.json(slackStatus));
 app.get('/api/anydesk', (_, res) => res.json(anydeskStatus));
 app.get('/api/ping', (_, res) => res.json(pingStatus));
 
-const https = require('https');
-
+// Route IP publique
 app.get('/ip', (req, res) => {
   https.get('https://api.ipify.org', response => {
     let ip = '';
     response.on('data', chunk => ip += chunk);
-    response.on('end', () => {
-      res.send(`Adresse IP publique du serveur : ${ip}`);
-    });
+    response.on('end', () => res.send(`Adresse IP publique du serveur : ${ip}`));
   }).on('error', (err) => {
-    console.error("Erreur IP:", err);
+    console.error("Erreur récupération IP :", err);
     res.status(500).send("Impossible de récupérer l'adresse IP.");
   });
 });
 
+// Lancer les mises à jour régulières
+updateSlackStatus();
+setInterval(updateSlackStatus, 15000);
 
-// ---------------------- LANCEMENT DU SERVEUR ----------------------
+updateAnydeskStatus();
+setInterval(updateAnydeskStatus, 15000);
 
-server.listen(PORT, () => {
-  console.log(`✅ Serveur Web + WebSocket lancé sur le port ${PORT}`);
-});
+testPing();
+setInterval(testPing, 60000);
