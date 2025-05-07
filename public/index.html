@@ -77,6 +77,11 @@
     <div id="anydeskStatus" class="status-circle"></div>
   </div>
 
+  <div class="item-row">
+    <div class="item-name">Azure</div>
+    <div id="azureStatus" class="status-circle"></div>
+  </div>
+
   <div class="ping-container">
     <h2 class="section-title">Ping IP Publique</h2>
     <div id="pingStatus"></div>
@@ -89,7 +94,6 @@
     const socketUrl = `${protocol}://${window.location.host}`;
     const socket = new WebSocket(socketUrl);
 
-
     socket.onmessage = function(event) {
       const data = JSON.parse(event.data);
       const currentTime = new Date().toLocaleString();
@@ -99,6 +103,9 @@
 
       const anydeskStatusElement = document.getElementById('anydeskStatus');
       anydeskStatusElement.className = 'status-circle ' + (data.anydesk.service_status === 'Disponible' ? 'status-ok' : 'status-error');
+
+      const azureStatusElement = document.getElementById('azureStatus');
+      azureStatusElement.className = 'status-circle ' + (data.azure.status === 'Disponible' ? 'status-ok' : 'status-error');
 
       const pingStatusElement = document.getElementById('pingStatus');
       pingStatusElement.innerHTML = '';
