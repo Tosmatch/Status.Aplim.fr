@@ -20,7 +20,8 @@ const wss = new WebSocket.Server({ server });
 // Statuts initiaux
 let slackStatus = { status: 'En attente...', service_status: '', date_updated: '' };
 let anydeskStatus = { status: 'En attente...', service_status: '', incidents: [] };
-let microsoftAdminStatus = { status: 'En attente...', service_status: '', description: '', date_updated: '' };
+let microsoftAdminStatus = { status: 'En attente...', service_status: '', date_updated: '' };
+let azureStatus = { status: 'En attente...', service_status: '', date_updated: '' };
 
 // IP à surveiller
 const ipAddresses = ['80.14.43.74', '217.128.247.87', '86.214.116.135', '92.173.237.27', '72.14.201.119', '37.58.153.5', '37.58.130.51', '185.149.218.234', '212.84.57.223', '193.252.196.19'];
@@ -103,29 +104,39 @@ async function updateAnydeskStatus() {
   }
 }
 
-// Récupérer et analyser le flux RSS de Microsoft Admin Center Status
+// Microsoft Admin Center
 async function updateMicrosoftAdminStatus() {
   try {
-    const res = await fetch('https://status.cloud.microsoft/feeds/msft_admin_status.xml');  // Lien du flux RSS
+    const res = await fetch("https://status.cloud.microsoft/microsoftadmincenter/status.rss");
     const xml = await res.text();
     const parsed = await parseStringPromise(xml);
 
-    const item = parsed.rss.channel[0].item[0];
-
-    // Extraire le statut et les détails nécessaires
-    microsoftAdminStatus = {
-      status: item.status[0],  // 'Available' ou autre
-      description: item.description[0],  // Description de l'incident ou du statut
-      date_updated: new Date(item.pubDate[0]).toISOString()  // Date de la mise à jour
-    };
-
-    console.log(`[Microsoft Admin Center] Status récupéré : ${microsoftAdminStatus.status}`);
-    console.log(`[Microsoft Admin Center] Description : ${microsoftAdminStatus.description}`);
-
-    // Diffuser le statut à tous les clients WebSocket
+    const entry = parsed.rss.channel[0].item[0];
+    microsoftAdminStatus.service_status = entry.status[0].toLowerCase() === 'available' ? 'Disponible' : 'Problème détecté';
+    console.log(`[Microsoft Admin Center] Status récupéré : ${microsoftAdminStatus.service_status}`);
     broadcastStatus();
   } catch (e) {
-    console.error("Erreur lors de la récupération du statut Microsoft Admin Center : ", e);
+    console.error("Microsoft Admin Center error:", e);
+    microsoftAdminStatus.service_status = 'Problème détecté';
+    broadcastStatus();
+  }
+}
+
+// Microsoft Azure
+async function updateAzureStatus() {
+  try {
+    const res = await fetch("https://status.azure.microsoft.com/rss");
+    const xml = await res.text();
+    const parsed = await parseStringPromise(xml);
+
+    const entry = parsed.rss.channel[0].item[0];
+    azureStatus.service_status = entry.status[0].toLowerCase() === 'available' ? 'Disponible' : 'Problème détecté';
+    console.log(`[Microsoft Azure] Status récupéré : ${azureStatus.service_status}`);
+    broadcastStatus();
+  } catch (e) {
+    console.error("Microsoft Azure error:", e);
+    azureStatus.service_status = 'Problème détecté';
+    broadcastStatus();
   }
 }
 
@@ -134,11 +145,10 @@ function broadcastStatus() {
   const statusData = {
     slack: slackStatus,
     anydesk: anydeskStatus,
-    ping: pingStatus,
-    microsoftAdmin: microsoftAdminStatus // Ajouter le statut de Microsoft Admin Center ici
+    microsoftAdmin: microsoftAdminStatus,
+    azure: azureStatus,
+    ping: pingStatus
   };
-
-  // Diffuser à tous les clients WebSocket
   wss.clients.forEach(client => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(JSON.stringify(statusData));
@@ -149,8 +159,9 @@ function broadcastStatus() {
 // Routes API
 app.get('/api/status', (_, res) => res.json(slackStatus));
 app.get('/api/anydesk', (_, res) => res.json(anydeskStatus));
+app.get('/api/microsoftadmin', (_, res) => res.json(microsoftAdminStatus));
+app.get('/api/azure', (_, res) => res.json(azureStatus));
 app.get('/api/ping', (_, res) => res.json(pingStatus));
-app.get('/api/microsoftAdmin', (_, res) => res.json(microsoftAdminStatus)); // Nouvelle route pour récupérer le statut Microsoft
 
 // Route IP publique
 app.get('/ip', (req, res) => {
@@ -172,7 +183,10 @@ updateAnydeskStatus();
 setInterval(updateAnydeskStatus, 15000);
 
 updateMicrosoftAdminStatus();
-setInterval(updateMicrosoftAdminStatus, 30000);  // Mise à jour toutes les 30 secondes
+setInterval(updateMicrosoftAdminStatus, 15000);
+
+updateAzureStatus();
+setInterval(updateAzureStatus, 15000);
 
 testPing();
-setInterval(testPing, 60000);  // Test ping toutes les minutes
+setInterval(testPing, 60000);
