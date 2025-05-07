@@ -82,11 +82,6 @@
     <div id="microsoftAdminStatus" class="status-circle"></div>
   </div>
 
-  <div class="item-row">
-    <div class="item-name">Microsoft Azure</div>
-    <div id="azureStatus" class="status-circle"></div>
-  </div>
-
   <div class="ping-container">
     <h2 class="section-title">Ping IP Publique</h2>
     <div id="pingStatus"></div>
@@ -111,9 +106,6 @@
 
       const microsoftAdminStatusElement = document.getElementById('microsoftAdminStatus');
       microsoftAdminStatusElement.className = 'status-circle ' + (data.microsoftAdmin.service_status === 'Disponible' ? 'status-ok' : 'status-error');
-
-      const azureStatusElement = document.getElementById('azureStatus');
-      azureStatusElement.className = 'status-circle ' + (data.azure.service_status === 'Disponible' ? 'status-ok' : 'status-error');
 
       const pingStatusElement = document.getElementById('pingStatus');
       pingStatusElement.innerHTML = '';
