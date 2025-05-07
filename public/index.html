@@ -77,11 +77,6 @@
     <div id="anydeskStatus" class="status-circle"></div>
   </div>
 
-  <div class="item-row">
-    <div class="item-name">Azure</div>
-    <div id="azureStatus" class="status-circle"></div>
-  </div>
-
   <div class="ping-container">
     <h2 class="section-title">Ping IP Publique</h2>
     <div id="pingStatus"></div>
@@ -91,8 +86,9 @@
 
   <script>
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const socketUrl = `${protocol}://${window.location.host}`;
+    const socketUrl = ${protocol}://${window.location.host};
     const socket = new WebSocket(socketUrl);
+
 
     socket.onmessage = function(event) {
       const data = JSON.parse(event.data);
@@ -103,9 +99,6 @@
 
       const anydeskStatusElement = document.getElementById('anydeskStatus');
       anydeskStatusElement.className = 'status-circle ' + (data.anydesk.service_status === 'Disponible' ? 'status-ok' : 'status-error');
-
-      const azureStatusElement = document.getElementById('azureStatus');
-      azureStatusElement.className = 'status-circle ' + (data.azure.status === 'Disponible' ? 'status-ok' : 'status-error');
 
       const pingStatusElement = document.getElementById('pingStatus');
       pingStatusElement.innerHTML = '';
@@ -119,12 +112,12 @@
 
         const pingItem = document.createElement('div');
         pingItem.className = 'item-row';
-        pingItem.innerHTML = `<div class="item-name">${city}</div><div class="status-circle ${statusClass}"></div>`;
+        pingItem.innerHTML = <div class="item-name">${city}</div><div class="status-circle ${statusClass}"></div>;
         pingStatusElement.appendChild(pingItem);
       });
 
       const lastUpdatedElement = document.getElementById('lastUpdated');
-      lastUpdatedElement.textContent = `Dernière mise à jour : ${currentTime}`;
+      lastUpdatedElement.textContent = Dernière mise à jour : ${currentTime};
     };
 
     socket.onopen = () => {
