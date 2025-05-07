@@ -8,20 +8,17 @@ const https = require("https");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Dossier public pour les fichiers statiques (HTML, JS, etc.)
 app.use(express.static(__dirname + '/public'));
 
-// WebSocket Server
 const server = app.listen(PORT, () => {
   console.log(`✅ Dashboard en ligne sur le port ${PORT}`);
 });
 const wss = new WebSocket.Server({ server });
 
-// Statuts initiaux
 let slackStatus = { status: 'En attente...', service_status: '', date_updated: '' };
 let anydeskStatus = { status: 'En attente...', service_status: '', incidents: [] };
+let azureStatus = { status: 'En attente...', incidents: [] };
 
-// IP à surveiller
 const ipAddresses = ['80.14.43.74', '217.128.247.87', '86.214.116.135', '92.173.237.27', '72.14.201.119', '37.58.153.5', '37.58.130.51', '185.149.218.234', '212.84.57.223', '193.252.196.19'];
 const ipToCityMap = {
   "80.14.43.74": "Angers", "217.128.247.87": "Nancy", "86.214.116.135": "Montpellier", "92.173.237.27": "Caen",
@@ -93,7 +90,7 @@ async function updateAnydeskStatus() {
 
     anydeskStatus.service_status = recent.length > 0 ? 'Problème détecté' : 'Disponible';
     console.log(`[AnyDesk] Incidents récents : ${anydeskStatus.incidents.length}`);
-console.log(`[AnyDesk] Status calculé : ${anydeskStatus.service_status}`);
+    console.log(`[AnyDesk] Status calculé : ${anydeskStatus.service_status}`);
     broadcastStatus();
   } catch (e) {
     console.error("AnyDesk error:", e);
@@ -102,11 +99,42 @@ console.log(`[AnyDesk] Status calculé : ${anydeskStatus.service_status}`);
   }
 }
 
-// Diffuse à tous les clients connectés
+// Azure
+async function updateAzureStatus() {
+  try {
+    const res = await fetch("https://rssfeed.azure.status.microsoft/en-us/status/feed/");
+    const xml = await res.text();
+    const parsed = await parseStringPromise(xml);
+
+    const items = parsed.rss.channel[0].item || [];
+
+    const recentIncidents = items.map(item => ({
+      title: item.title[0],
+      date: new Date(item.pubDate[0]).toISOString().split('T')[0],
+      description: item.description[0].replace(/<\/?[^>]+(>|$)/g, "").trim()
+    })).filter(incident => {
+      const d = new Date(incident.date);
+      return (Date.now() - d.getTime()) / (1000 * 3600 * 24) <= 7;
+    });
+
+    azureStatus.incidents = recentIncidents;
+    azureStatus.status = recentIncidents.length > 0 ? 'Problème détecté' : 'Disponible';
+
+    console.log(`[Azure] Incidents récents : ${recentIncidents.length}`);
+    broadcastStatus();
+  } catch (e) {
+    console.error("Azure Status error:", e);
+    azureStatus.status = 'Erreur de récupération';
+    broadcastStatus();
+  }
+}
+
+// Broadcast à tous les clients
 function broadcastStatus() {
   const statusData = {
     slack: slackStatus,
     anydesk: anydeskStatus,
+    azure: azureStatus,
     ping: pingStatus
   };
   wss.clients.forEach(client => {
@@ -119,9 +147,10 @@ function broadcastStatus() {
 // Routes API
 app.get('/api/status', (_, res) => res.json(slackStatus));
 app.get('/api/anydesk', (_, res) => res.json(anydeskStatus));
+app.get('/api/azure', (_, res) => res.json(azureStatus));
 app.get('/api/ping', (_, res) => res.json(pingStatus));
 
-// Route IP publique
+// IP publique
 app.get('/ip', (req, res) => {
   https.get('https://api.ipify.org', response => {
     let ip = '';
@@ -139,6 +168,9 @@ setInterval(updateSlackStatus, 15000);
 
 updateAnydeskStatus();
 setInterval(updateAnydeskStatus, 15000);
+
+updateAzureStatus();
+setInterval(updateAzureStatus, 5 * 60 * 1000);
 
 testPing();
 setInterval(testPing, 60000);
