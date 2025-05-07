@@ -13,7 +13,7 @@ app.use(express.static(__dirname + '/public'));
 
 // WebSocket Server
 const server = app.listen(PORT, () => {
-  console.log(✅ Dashboard en ligne sur le port ${PORT});
+  console.log(`✅ Dashboard en ligne sur le port ${PORT}`);
 });
 const wss = new WebSocket.Server({ server });
 
@@ -44,7 +44,7 @@ async function testPing() {
         result: isAlive ? 'En ligne' : 'Hors ligne',
         city: cityName
       };
-      console.log([Ping Test] ${cityName} (${ip}) : ${pingStatus[ip].result});
+      console.log(`[Ping Test] ${cityName} (${ip}) : ${pingStatus[ip].result}`);
       broadcastStatus();
     });
   });
@@ -60,7 +60,7 @@ async function updateSlackStatus() {
       service_status: data.status.toLowerCase().includes('ok') ? 'Disponible' : 'Problème détecté',
       date_updated: new Date().toISOString()
     };
-    console.log([Slack] Status récupéré : ${slackStatus.service_status} (${slackStatus.status}));
+    console.log(`[Slack] Status récupéré : ${slackStatus.service_status} (${slackStatus.status})`);
     broadcastStatus();
   } catch (e) {
     console.error("Slack error:", e);
@@ -92,8 +92,8 @@ async function updateAnydeskStatus() {
     });
 
     anydeskStatus.service_status = recent.length > 0 ? 'Problème détecté' : 'Disponible';
-    console.log([AnyDesk] Incidents récents : ${anydeskStatus.incidents.length});
-console.log([AnyDesk] Status calculé : ${anydeskStatus.service_status});
+    console.log(`[AnyDesk] Incidents récents : ${anydeskStatus.incidents.length}`);
+    console.log(`[AnyDesk] Status calculé : ${anydeskStatus.service_status}`);
     broadcastStatus();
   } catch (e) {
     console.error("AnyDesk error:", e);
@@ -126,7 +126,7 @@ app.get('/ip', (req, res) => {
   https.get('https://api.ipify.org', response => {
     let ip = '';
     response.on('data', chunk => ip += chunk);
-    response.on('end', () => res.send(Adresse IP publique du serveur : ${ip}));
+    response.on('end', () => res.send(`Adresse IP publique du serveur : ${ip}`));
   }).on('error', (err) => {
     console.error("Erreur récupération IP :", err);
     res.status(500).send("Impossible de récupérer l'adresse IP.");
