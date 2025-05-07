@@ -86,9 +86,8 @@
 
   <script>
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const socketUrl = ${protocol}://${window.location.host};
+    const socketUrl = `${protocol}://${window.location.host}`;
     const socket = new WebSocket(socketUrl);
-
 
     socket.onmessage = function(event) {
       const data = JSON.parse(event.data);
@@ -112,12 +111,12 @@
 
         const pingItem = document.createElement('div');
         pingItem.className = 'item-row';
-        pingItem.innerHTML = <div class="item-name">${city}</div><div class="status-circle ${statusClass}"></div>;
+        pingItem.innerHTML = `<div class="item-name">${city}</div><div class="status-circle ${statusClass}"></div>`;
         pingStatusElement.appendChild(pingItem);
       });
 
       const lastUpdatedElement = document.getElementById('lastUpdated');
-      lastUpdatedElement.textContent = Dernière mise à jour : ${currentTime};
+      lastUpdatedElement.textContent = `Dernière mise à jour : ${currentTime}`;
     };
 
     socket.onopen = () => {
