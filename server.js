@@ -1,3 +1,4 @@
+
 const express = require("express");
 const fetch = require("node-fetch");
 const { parseStringPromise } = require("xml2js");
@@ -20,8 +21,8 @@ const wss = new WebSocket.Server({ server });
 // Statuts initiaux
 let slackStatus = { status: 'En attente...', service_status: '', date_updated: '' };
 let anydeskStatus = { status: 'En attente...', service_status: '', incidents: [] };
-let microsoftAdminStatus = { status: 'En attente...', service_status: '', date_updated: '' };
-let azureStatus = { status: 'En attente...', service_status: '', date_updated: '' };
+let microsoftAdminStatus = { service_status: '', incidents: [] };
+let azureStatus = { service_status: '', incidents: [] };
 
 // IP à surveiller
 const ipAddresses = ['80.14.43.74', '217.128.247.87', '86.214.116.135', '92.173.237.27', '72.14.201.119', '37.58.153.5', '37.58.130.51', '185.149.218.234', '212.84.57.223', '193.252.196.19'];
@@ -95,7 +96,7 @@ async function updateAnydeskStatus() {
 
     anydeskStatus.service_status = recent.length > 0 ? 'Problème détecté' : 'Disponible';
     console.log(`[AnyDesk] Incidents récents : ${anydeskStatus.incidents.length}`);
-    console.log(`[AnyDesk] Status calculé : ${anydeskStatus.service_status}`);
+console.log(`[AnyDesk] Status calculé : ${anydeskStatus.service_status}`);
     broadcastStatus();
   } catch (e) {
     console.error("AnyDesk error:", e);
@@ -108,12 +109,32 @@ async function updateAnydeskStatus() {
 async function updateMicrosoftAdminStatus() {
   try {
     const res = await fetch("https://status.cloud.microsoft/microsoftadmincenter/status.rss");
+    
+    // Vérification si la réponse est valide
+    if (!res.ok) {
+      console.error("Erreur lors de la récupération du flux RSS de Microsoft Admin Center:", res.status, res.statusText);
+      microsoftAdminStatus.service_status = 'Problème détecté';
+      broadcastStatus();
+      return;
+    }
+
     const xml = await res.text();
+
+    // Log du contenu brut du flux RSS pour vérifier la structure
+    console.log("Flux RSS Microsoft Admin Center : ", xml);
+
+    // Tenter de parser le XML
     const parsed = await parseStringPromise(xml);
 
-    const entry = parsed.rss.channel[0].item[0];
-    microsoftAdminStatus.service_status = entry.status[0].toLowerCase() === 'available' ? 'Disponible' : 'Problème détecté';
-    console.log(`[Microsoft Admin Center] Status récupéré : ${microsoftAdminStatus.service_status}`);
+    // Vérification si la structure du flux contient les données attendues
+    if (parsed.rss && parsed.rss.channel && parsed.rss.channel[0] && parsed.rss.channel[0].item) {
+      const entry = parsed.rss.channel[0].item[0];
+      microsoftAdminStatus.service_status = entry.status[0].toLowerCase() === 'available' ? 'Disponible' : 'Problème détecté';
+      console.log(`[Microsoft Admin Center] Status récupéré : ${microsoftAdminStatus.service_status}`);
+    } else {
+      console.error("Structure du flux RSS inattendue pour Microsoft Admin Center");
+      microsoftAdminStatus.service_status = 'Problème détecté';
+    }
     broadcastStatus();
   } catch (e) {
     console.error("Microsoft Admin Center error:", e);
@@ -122,19 +143,39 @@ async function updateMicrosoftAdminStatus() {
   }
 }
 
-// Microsoft Azure
+// Azure Status
 async function updateAzureStatus() {
   try {
-    const res = await fetch("https://status.azure.microsoft.com/rss");
+    const res = await fetch("https://status.azure.com/en-us/status/feed/");
+
+    // Vérification si la réponse est valide
+    if (!res.ok) {
+      console.error("Erreur lors de la récupération du flux RSS de Microsoft Azure:", res.status, res.statusText);
+      azureStatus.service_status = 'Problème détecté';
+      broadcastStatus();
+      return;
+    }
+
     const xml = await res.text();
+
+    // Log du contenu brut du flux RSS pour vérifier la structure
+    console.log("Flux RSS Azure : ", xml);
+
+    // Tenter de parser le XML
     const parsed = await parseStringPromise(xml);
 
-    const entry = parsed.rss.channel[0].item[0];
-    azureStatus.service_status = entry.status[0].toLowerCase() === 'available' ? 'Disponible' : 'Problème détecté';
-    console.log(`[Microsoft Azure] Status récupéré : ${azureStatus.service_status}`);
+    // Vérification si la structure du flux contient les données attendues
+    if (parsed.rss && parsed.rss.channel && parsed.rss.channel[0] && parsed.rss.channel[0].item) {
+      const entry = parsed.rss.channel[0].item[0];
+      azureStatus.service_status = entry.status[0].toLowerCase() === 'available' ? 'Disponible' : 'Problème détecté';
+      console.log(`[Azure] Status récupéré : ${azureStatus.service_status}`);
+    } else {
+      console.error("Structure du flux RSS inattendue pour Azure");
+      azureStatus.service_status = 'Problème détecté';
+    }
     broadcastStatus();
   } catch (e) {
-    console.error("Microsoft Azure error:", e);
+    console.error("Azure error:", e);
     azureStatus.service_status = 'Problème détecté';
     broadcastStatus();
   }
@@ -159,7 +200,7 @@ function broadcastStatus() {
 // Routes API
 app.get('/api/status', (_, res) => res.json(slackStatus));
 app.get('/api/anydesk', (_, res) => res.json(anydeskStatus));
-app.get('/api/microsoftadmin', (_, res) => res.json(microsoftAdminStatus));
+app.get('/api/microsoft-admin', (_, res) => res.json(microsoftAdminStatus));
 app.get('/api/azure', (_, res) => res.json(azureStatus));
 app.get('/api/ping', (_, res) => res.json(pingStatus));
 
