@@ -78,6 +78,11 @@
   </div>
 
   <div class="item-row">
+    <div class="item-name">Microsoft Admin Center</div>
+    <div id="microsoftAdminStatus" class="status-circle"></div>
+  </div>
+
+  <div class="item-row">
     <div class="item-name">Microsoft Azure</div>
     <div id="azureStatus" class="status-circle"></div>
   </div>
@@ -104,8 +109,11 @@
       const anydeskStatusElement = document.getElementById('anydeskStatus');
       anydeskStatusElement.className = 'status-circle ' + (data.anydesk.service_status === 'Disponible' ? 'status-ok' : 'status-error');
 
+      const microsoftAdminStatusElement = document.getElementById('microsoftAdminStatus');
+      microsoftAdminStatusElement.className = 'status-circle ' + (data.microsoftAdmin.service_status === 'Disponible' ? 'status-ok' : 'status-error');
+
       const azureStatusElement = document.getElementById('azureStatus');
-      azureStatusElement.className = 'status-circle ' + (data.azure.status === 'Disponible' ? 'status-ok' : 'status-error');
+      azureStatusElement.className = 'status-circle ' + (data.azure.service_status === 'Disponible' ? 'status-ok' : 'status-error');
 
       const pingStatusElement = document.getElementById('pingStatus');
       pingStatusElement.innerHTML = '';
@@ -132,9 +140,3 @@
     };
 
     socket.onclose = () => {
-      console.log('La connexion WebSocket a été fermée');
-    };
-  </script>
-
-</body>
-</html>
